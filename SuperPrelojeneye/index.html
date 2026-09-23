@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperPrelojeneye App</title>
+    <!-- Tailwind CSS для крутого дизайна -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js для легковесной магии на фронтенде -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans" x-data="app()">
+
+    <!-- Шапка / Навигация -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wider text-indigo-400">⚡ SuperPrelojeneye</h1>
+
+            <template x-if="currentUser">
+                <div class="flex items-center gap-4">
+                    <span class="text-sm bg-slate-700 px-3 py-1 rounded-full text-indigo-200">
+                        👤 <span x-text="currentUser.username"></span> (ID: <span x-text="currentUser.id"></span>)
+                    </span>
+                    <button @click="logout()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-sm transition">Выйти</button>
+                </div>
+            </template>
+            <template x-if="!currentUser">
+                <span class="text-sm text-slate-400">Авторизуйтесь, чтобы начать</span>
+            </template>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="max-w-4xl mx-auto p-4 mt-6">
+
+        <!-- 1. Блок авторизации / входа / регистрации -->
+        <div x-show="!currentUser" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl max-w-md mx-auto">
+            <h2 class="text-2xl font-semibold mb-4 text-center text-indigo-300" x-text="isLoginMode ? 'Вход в аккаунт' : 'Регистрация'"></h2>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Имя пользователя</label>
+                    <input type="text" x-model="authForm.username" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Пароль</label>
+                    <input type="password" x-model="authForm.password" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button @click="submitAuth()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded font-medium transition" x-text="isLoginMode ? 'Войти' : 'Зарегистрироваться'"></button>
+                </div>
+
+                <p class="text-center text-sm text-slate-400 mt-4 cursor-pointer hover:underline" @click="isLoginMode = !isLoginMode">
+                    <span x-text="isLoginMode ? 'Нет аккаунта? Зарегистрируйтесь' : 'Уже есть аккаунт? Войдите'"></span>
+                </p>
+            </div>
+        </div>
+
+        <!-- 2. Основное приложение (когда вошел) -->
+        <div x-show="currentUser" class="space-y-6">
+
+            <!-- Навигационные вкладки -->
+            <div class="flex gap-2 border-b border-slate-700 pb-3">
+                <button @click="activeTab = 'feed'; fetchAllPosts()" :class="activeTab === 'feed' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-4 py-2 rounded transition font-medium">🌍 Общая лента</button>
+                <button @click="activeTab = 'my'; fetchMyPosts()" :class="activeTab === 'my' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-4 py-2 rounded transition font-medium">📝 Мои посты</button>
+                <button @click="activeTab = 'create'" :class="activeTab === 'create' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-4 py-2 rounded transition font-medium">➕ Создать пост</button>
+            </div>
+
+            <!-- Вкладка: Общая лента -->
+            <div x-show="activeTab === 'feed'" class="space-y-4">
+                <h2 class="text-xl font-semibold text-indigo-300">Публичная лента постов</h2>
+                <template x-for="post in allPosts" :key="post.id">
+                    <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-bold text-indigo-400" x-text="post.title"></h3>
+                            <span class="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300">Автор: <span x-text="post.author ? post.author.username : 'Неизвестен'"></span></span>
+                        </div>
+                        <p class="text-slate-300 font-semibold text-sm mb-1" x-text="post.content"></p>
+                        <p class="text-slate-400 text-sm" x-text="post.body"></p>
+                    </div>
+                </template>
+                <p x-show="allPosts.length === 0" class="text-slate-500">Постов пока нет.</p>
+            </div>
+
+            <!-- Вкладка: Мои посты -->
+            <div x-show="activeTab === 'my'" class="space-y-4">
+                <h2 class="text-xl font-semibold text-indigo-300">Мои записи</h2>
+                <template x-for="post in myPosts" :key="post.id">
+                    <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="text-lg font-bold text-indigo-400" x-text="post.title"></h3>
+                                <span class="text-xs px-2 py-0.5 rounded" :class="post.private ? 'bg-amber-900 text-amber-200' : 'bg-emerald-900 text-emerald-200'" x-text="post.private ? '🔒 Личный' : '🌍 Публичный'"></span>
+                            </div>
+                            <button @click="deletePost(post.id)" class="text-rose-400 hover:text-rose-300 text-sm bg-slate-900 px-3 py-1 rounded border border-slate-700">Удалить</button>
+                        </div>
+                        <p class="text-slate-300 font-semibold text-sm mb-1" x-text="post.content"></p>
+                        <p class="text-slate-400 text-sm" x-text="post.body"></p>
+                    </div>
+                </template>
+                <p x-show="myPosts.length === 0" class="text-slate-500">У вас пока нет созданных постов.</p>
+            </div>
+
+            <!-- Вкладка: Создать пост -->
+            <div x-show="activeTab === 'create'" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl max-w-lg">
+                <h2 class="text-xl font-semibold mb-4 text-indigo-300">Создать новый пост</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Заголовок (title)</label>
+                        <input type="text" x-model="newPostForm.title" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Краткое содержание (content)</label>
+                        <input type="text" x-model="newPostForm.content" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Основной текст (body)</label>
+                        <textarea x-model="newPostForm.body" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500"></textarea>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" x-model="newPostForm.private" id="priv" class="w-4 h-4 rounded bg-slate-900 border-slate-700">
+                        <label for="priv" class="text-sm text-slate-300">Сделать пост приватным (личным)</label>
+                    </div>
+                    <button @click="createPost()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded font-medium transition">Опубликовать</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Скрипты взаимодействия с твоим FastAPI бэкендом -->
+    <script>
+        function app() {
+            return {
+                apiUrl: 'http://127.0.0.1:8000', // Адрес твоего запущенного бэкенда
+                currentUser: JSON.parse(localStorage.getItem('currentUser')) || null,
+                isLoginMode: true,
+                activeTab: 'feed',
+
+                authForm: { username: '', password: '' },
+                newPostForm: { title: '', content: '', body: '', private: false },
+
+                allPosts: [],
+                myPosts: [],
+
+                init() {
+                    if (this.currentUser) {
+                        this.fetchAllPosts();
+                    }
+                },
+
+                async submitAuth() {
+                    const endpoint = this.isLoginMode ? '/login' : '/auth';
+                    try {
+                        const res = await fetch(this.apiUrl + endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.authForm)
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            this.currentUser = { id: data.id, username: data.username };
+                            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+                            this.authForm = { username: '', password: '' };
+                            this.fetchAllPosts();
+                        } else {
+                            alert(data.detail || 'Ошибка авторизации');
+                        }
+                    } catch (e) {
+                        alert('Не удалось подключиться к серверу! Убедитесь, что FastAPI запущен.');
+                    }
+                },
+
+                logout() {
+                    this.currentUser = null;
+                    localStorage.removeItem('currentUser');
+                },
+
+                async fetchAllPosts() {
+                    try {
+                        const res = await fetch(this.apiUrl + '/getAllPosts');
+                        if (res.ok) {
+                            this.allPosts = await res.json();
+                        }
+                    } catch (e) { console.error(e); }
+                },
+
+                async fetchMyPosts() {
+                    if (!this.currentUser) return;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/getmyposts/${this.currentUser.id}`);
+                        if (res.ok) {
+                            this.myPosts = await res.json();
+                        } else {
+                            this.myPosts = [];
+                        }
+                    } catch (e) { this.myPosts = []; }
+                },
+
+                async createPost() {
+                    if (!this.currentUser) return;
+                    const payload = {
+                        title: this.newPostForm.title,
+                        content: this.newPostForm.content,
+                        body: this.newPostForm.body,
+                        private: this.newPostForm.private,
+                        Author_id: this.currentUser.id
+                    };
+                    try {
+                        const res = await fetch(this.apiUrl + '/post', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (res.ok) {
+                            alert('Пост успешно создан!');
+                            this.newPostForm = { title: '', content: '', body: '', private: false };
+                            this.activeTab = 'feed';
+                            this.fetchAllPosts();
+                        } else {
+                            const err = await res.json();
+                            alert(JSON.stringify(err.detail));
+                        }
+                    } catch (e) { alert('Ошибка при создании поста'); }
+                },
+
+                async deletePost(postId) {
+                    if (!confirm('Точно удалить этот пост?')) return;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/post/${postId}?user_id=${this.currentUser.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (res.ok) {
+                            this.fetchMyPosts();
+                        } else {
+                            const err = await res.json();
+                            alert(err.detail || 'Ошибка удаления');
+                        }
+                    } catch (e) { alert('Ошибка запроса'); }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

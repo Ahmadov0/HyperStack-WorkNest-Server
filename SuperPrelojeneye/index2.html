@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperPrelojeneye Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glow-card:hover { box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.4); }
+    </style>
+</head>
+<body class="bg-[#07090e] text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white" x-data="app()">
+
+    <!-- Уведомления (Toast) -->
+    <div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div class="pointer-events-auto bg-slate-900/90 border border-slate-700/80 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition transform translate-y-0">
+                <span class="text-lg" x-text="toast.type === 'error' ? '❌' : '✅'"></span>
+                <p class="text-xs font-medium text-slate-200" x-text="toast.text"></p>
+            </div>
+        </template>
+    </div>
+
+    <!-- Навигация -->
+    <header class="bg-[#07090e]/80 backdrop-blur-xl border-b border-slate-800/60 sticky top-0 z-40 px-4 lg:px-8 py-4">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 text-white font-black text-lg">
+                    ⚡
+                </div>
+                <div>
+                    <h1 class="font-extrabold tracking-tight text-base bg-gradient-to-r from-indigo-400 via-violet-300 to-purple-400 bg-clip-text text-transparent">
+                        SuperPrelojeneye
+                    </h1>
+                    <p class="text-[9px] text-slate-400 font-bold tracking-widest uppercase">Workspace</p>
+                </div>
+            </div>
+
+            <template x-if="currentUser">
+                <div class="flex items-center gap-3">
+                    <div class="hidden sm:flex items-center gap-2 bg-slate-900/80 border border-slate-800 px-3.5 py-1.5 rounded-full shadow-inner">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-xs text-slate-300">Юзер: <strong class="text-indigo-300" x-text="currentUser.username"></strong></span>
+                    </div>
+                    <button @click="logout()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition active:scale-95">
+                        Выйти
+                    </button>
+                </div>
+            </template>
+        </div>
+    </header>
+
+    <!-- Основная область -->
+    <main class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Авторизация -->
+        <div x-show="!currentUser" class="max-w-md mx-auto mt-12">
+            <div class="bg-slate-900/40 border border-slate-800/80 p-8 rounded-3xl shadow-2xl backdrop-blur-xl relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-black tracking-tight text-white mb-1.5" x-text="isLoginMode ? 'Авторизация' : 'Регистрация'"></h2>
+                    <p class="text-xs text-slate-400" x-text="isLoginMode ? 'Войдите, чтобы управлять контентом' : 'Создайте новый аккаунт в системе'"></p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Логин</label>
+                        <input type="text" x-model="authForm.username" placeholder="Имя пользователя" class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Пароль</label>
+                        <input type="password" x-model="authForm.password" placeholder="Пароль" class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+
+                    <div class="pt-2">
+                        <button @click="submitAuth()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-600/25 transition active:scale-[0.98] flex items-center justify-center gap-2">
+                            <span x-text="isLoginMode ? 'Войти' : 'Создать аккаунт'"></span>
+                        </button>
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <button @click="isLoginMode = !isLoginMode" class="text-xs text-slate-400 hover:text-indigo-400 transition font-semibold">
+                            <span x-text="isLoginMode ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Интерфейс после входа -->
+        <div x-show="currentUser" class="space-y-6">
+
+            <!-- Табы -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800/60">
+                <button @click="activeTab = 'feed'; fetchAllPosts()" :class="activeTab === 'feed' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border-indigo-500' : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border-slate-800/80'" class="px-5 py-2.5 rounded-xl text-xs font-bold transition border">
+                    🌍 Общая лента
+                </button>
+                <button @click="activeTab = 'my'; fetchMyPosts()" :class="activeTab === 'my' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border-indigo-500' : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border-slate-800/80'" class="px-5 py-2.5 rounded-xl text-xs font-bold transition border">
+                    📝 Мои посты
+                </button>
+                <button @click="activeTab = 'create'" :class="activeTab === 'create' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border-indigo-500' : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border-slate-800/80'" class="px-5 py-2.5 rounded-xl text-xs font-bold transition border">
+                    ➕ Создать пост
+                </button>
+                <button @click="activeTab = 'settings'; loadProfileData()" :class="activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border-indigo-500' : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border-slate-800/80'" class="px-5 py-2.5 rounded-xl text-xs font-bold transition border">
+                    ⚙️ Профиль
+                </button>
+            </div>
+
+            <!-- Общая лента -->
+            <div x-show="activeTab === 'feed'" class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-bold text-slate-200">Публичные записи</h2>
+                    <button @click="fetchAllPosts()" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">Обновить</button>
+                </div>
+                <div class="grid gap-4">
+                    <template x-for="post in allPosts" :key="post.id">
+                        <div class="glow-card bg-slate-900/30 border border-slate-800/80 p-5 rounded-2xl transition">
+                            <div class="flex justify-between items-start gap-4 mb-3">
+                                <h3 class="text-base font-bold text-indigo-300" x-text="post.title"></h3>
+                                <span class="text-[10px] font-bold bg-slate-800/80 text-slate-300 px-3 py-1 rounded-full border border-slate-700/50">
+                                    @<span x-text="post.author ? post.author.username : 'unknown'"></span>
+                                </span>
+                            </div>
+                            <p class="text-sm font-semibold text-slate-200 mb-2" x-text="post.content"></p>
+                            <p class="text-xs text-slate-400 leading-relaxed bg-slate-950/40 p-3.5 rounded-xl border border-slate-900/80" x-text="post.body"></p>
+                        </div>
+                    </template>
+                </div>
+                <div x-show="allPosts.length === 0" class="text-center py-16 bg-slate-900/20 border border-slate-800/50 rounded-2xl">
+                    <p class="text-xs text-slate-500 font-medium">Постов пока нет.</p>
+                </div>
+            </div>
+
+            <!-- Мои посты -->
+            <div x-show="activeTab === 'my'" class="space-y-4">
+                <h2 class="text-base font-bold text-slate-200">Мои записи</h2>
+                <div class="grid gap-4">
+                    <template x-for="post in myPosts" :key="post.id">
+                        <div class="glow-card bg-slate-900/30 border border-slate-800/80 p-5 rounded-2xl transition">
+                            <div class="flex justify-between items-start gap-4 mb-3">
+                                <div>
+                                    <h3 class="text-base font-bold text-indigo-300 mb-1" x-text="post.title"></h3>
+                                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-block" :class="post.private ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'" x-text="post.private ? '🔒 Личный' : '🌍 Публичный'"></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button @click="openEditPost(post)" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs px-3.5 py-1.5 rounded-xl font-bold transition">Изменить</button>
+                                    <button @click="deletePost(post.id)" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs px-3.5 py-1.5 rounded-xl font-bold transition">Удалить</button>
+                                </div>
+                            </div>
+                            <p class="text-sm font-semibold text-slate-200 mb-2" x-text="post.content"></p>
+                            <p class="text-xs text-slate-400 leading-relaxed bg-slate-950/40 p-3.5 rounded-xl border border-slate-900/80" x-text="post.body"></p>
+                        </div>
+                    </template>
+                </div>
+                <div x-show="myPosts.length === 0" class="text-center py-16 bg-slate-900/20 border border-slate-800/50 rounded-2xl">
+                    <p class="text-xs text-slate-500 font-medium">У вас нет созданных постов.</p>
+                </div>
+            </div>
+
+            <!-- Создать пост -->
+            <div x-show="activeTab === 'create'" class="max-w-xl mx-auto">
+                <div class="bg-slate-900/40 border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-xl">
+                    <h2 class="text-lg font-bold text-slate-200 mb-6">Новая запись</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Заголовок</label>
+                            <input type="text" x-model="newPostForm.title" placeholder="Заголовок..." class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Краткое содержание</label>
+                            <input type="text" x-model="newPostForm.content" placeholder="Краткое описание..." class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Текст</label>
+                            <textarea x-model="newPostForm.body" rows="4" placeholder="Текст поста..." class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+                        </div>
+                        <div class="flex items-center gap-3 pt-1">
+                            <input type="checkbox" x-model="newPostForm.private" id="priv" class="w-4 h-4 rounded bg-slate-950 border-slate-800 text-indigo-600 focus:ring-0 cursor-pointer">
+                            <label for="priv" class="text-xs font-bold text-slate-300 cursor-pointer">Приватный пост</label>
+                        </div>
+                        <div class="pt-3">
+                            <button @click="createPost()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-600/25 transition">Опубликовать</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Профиль -->
+            <div x-show="activeTab === 'settings'" class="max-w-xl mx-auto">
+                <div class="bg-slate-900/40 border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl backdrop-blur-xl">
+                    <h2 class="text-lg font-bold text-slate-200 mb-6">Профиль</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Имя пользователя</label>
+                            <input type="text" x-model="updateUserForm.username" class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Новый пароль</label>
+                            <input type="password" x-model="updateUserForm.password" placeholder="Оставьте пустым, если не меняете" class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div class="pt-3 flex gap-3">
+                            <button @click="updateProfile()" class="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-600/25 transition">Сохранить</button>
+                            <button @click="deleteAccount()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-5 py-3.5 rounded-2xl font-bold transition">Удалить аккаунт</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Модальное окно редактирования -->
+    <div x-show="editingPost" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-lg w-full">
+            <h2 class="text-lg font-bold text-slate-200 mb-6">Редактировать запись</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Заголовок</label>
+                    <input type="text" x-model="editPostForm.title" class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Краткое содержание</label>
+                    <input type="text" x-model="editPostForm.content" class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Текст</label>
+                    <textarea x-model="editPostForm.body" rows="4" class="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+                </div>
+                <div class="flex items-center gap-3 pt-1">
+                    <input type="checkbox" x-model="editPostForm.private" id="editPriv" class="w-4 h-4 rounded bg-slate-950 border-slate-800 text-indigo-600 focus:ring-0 cursor-pointer">
+                    <label for="editPriv" class="text-xs font-bold text-slate-300 cursor-pointer">Приватный пост</label>
+                </div>
+                <div class="flex gap-3 pt-3">
+                    <button @click="saveEditedPost()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-2xl transition">Сохранить</button>
+                    <button @click="editingPost = null" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3.5 rounded-2xl font-bold transition">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты -->
+    <script>
+        function app() {
+            return {
+                apiUrl: 'http://127.0.0.1:8000',
+                currentUser: JSON.parse(localStorage.getItem('currentUser')) || null,
+                isLoginMode: true,
+                activeTab: 'feed',
+                toasts: [],
+
+                authForm: { username: '', password: '' },
+                newPostForm: { title: '', content: '', body: '', private: false },
+                updateUserForm: { username: '', password: '' },
+
+                allPosts: [],
+                myPosts: [],
+
+                editingPost: null,
+                editPostForm: { title: '', content: '', body: '', private: false },
+
+                showToast(text, type = 'success') {
+                    const id = Date.now();
+                    this.toasts.push({ id, text, type });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 3000);
+                },
+
+                init() {
+                    if (this.currentUser) this.fetchAllPosts();
+                },
+
+                async submitAuth() {
+                    const endpoint = this.isLoginMode ? '/login' : '/auth';
+                    try {
+                        const res = await fetch(this.apiUrl + endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.authForm)
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            this.currentUser = { id: data.id, username: data.username };
+                            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+                            this.authForm = { username: '', password: '' };
+                            this.showToast('Успешный вход в систему!');
+                            this.fetchAllPosts();
+                        } else {
+                            this.showToast(data.detail || 'Ошибка авторизации', 'error');
+                        }
+                    } catch (e) {
+                        this.showToast('Нет связи с сервером бэкенда!', 'error');
+                    }
+                },
+
+                logout() {
+                    this.currentUser = null;
+                    localStorage.removeItem('currentUser');
+                    this.showToast('Вы вышли из аккаунта');
+                },
+
+                async fetchAllPosts() {
+                    try {
+                        const res = await fetch(this.apiUrl + '/getAllPosts');
+                        if (res.ok) this.allPosts = await res.json();
+                    } catch (e) { console.error(e); }
+                },
+
+                async fetchMyPosts() {
+                    if (!this.currentUser) return;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/getmyposts/${this.currentUser.id}`);
+                        if (res.ok) {
+                            this.myPosts = await res.json();
+                        } else {
+                            this.myPosts = [];
+                        }
+                    } catch (e) { this.myPosts = []; }
+                },
+
+                async createPost() {
+                    if (!this.currentUser) return;
+                    const payload = { ...this.newPostForm, Author_id: this.currentUser.id };
+                    try {
+                        const res = await fetch(this.apiUrl + '/post', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (res.ok) {
+                            this.newPostForm = { title: '', content: '', body: '', private: false };
+                            this.activeTab = 'feed';
+                            this.showToast('Пост успешно опубликован!');
+                            this.fetchAllPosts();
+                        } else {
+                            const err = await res.json();
+                            this.showToast(JSON.stringify(err.detail), 'error');
+                        }
+                    } catch (e) { this.showToast('Ошибка запроса', 'error'); }
+                },
+
+                openEditPost(post) {
+                    this.editingPost = post.id;
+                    this.editPostForm = { title: post.title, content: post.content, body: post.body, private: post.private };
+                },
+
+                async saveEditedPost() {
+                    try {
+                        const res = await fetch(`${this.apiUrl}/post/${this.editingPost}?user_id=${this.currentUser.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.editPostForm)
+                        });
+                        if (res.ok) {
+                            this.editingPost = null;
+                            this.showToast('Пост обновлен!');
+                            this.fetchMyPosts();
+                        } else {
+                            const err = await res.json();
+                            this.showToast(err.detail || 'Ошибка', 'error');
+                        }
+                    } catch (e) { this.showToast('Ошибка сети', 'error'); }
+                },
+
+                async deletePost(postId) {
+                    if (!confirm('Удалить эту запись?')) return;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/post/${postId}?user_id=${this.currentUser.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (res.ok) {
+                            this.showToast('Пост удален');
+                            this.fetchMyPosts();
+                        }
+                    } catch (e) { this.showToast('Ошибка сети', 'error'); }
+                },
+
+                loadProfileData() {
+                    this.updateUserForm.username = this.currentUser.username;
+                    this.updateUserForm.password = '';
+                },
+
+                async updateProfile() {
+                    try {
+                        const res = await fetch(`${this.apiUrl}/author/${this.currentUser.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.updateUserForm)
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            this.currentUser.username = data.username;
+                            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+                            this.showToast('Профиль обновлен!');
+                        } else {
+                            const err = await res.json();
+                            this.showToast(err.detail || 'Ошибка', 'error');
+                        }
+                    } catch (e) { this.showToast('Ошибка сети', 'error'); }
+                },
+
+                async deleteAccount() {
+                    if (!confirm('Удалить аккаунт и все посты?')) return;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/author/${this.currentUser.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (res.ok) {
+                            this.logout();
+                        }
+                    } catch (e) { this.showToast('Ошибка сети', 'error'); }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
