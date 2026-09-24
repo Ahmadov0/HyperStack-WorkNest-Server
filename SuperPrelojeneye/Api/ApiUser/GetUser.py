@@ -72,33 +72,42 @@ async def update_user(id: int, user: Login, db: sessionDeb):
             "username": res.username,
             "password": res.password,}
 
+
 @router.delete("/author/{id}",
                tags=["User"],
-               summary="Delete User",)
+               summary="Delete User", )
 async def delete_user(id: int, db: sessionDeb):
-    q = select(UserModel).where(UserModel.id == id)
+    q = select(UserModel).options(
+        selectinload(UserModel.posts).selectinload(PostModel.likes),
+        selectinload(UserModel.posts).selectinload(PostModel.comments),
+        selectinload(UserModel.likes),
+        selectinload(UserModel.comments)
+    ).where(UserModel.id == id)
 
     result = await db.execute(q)
-    res = result.scalar_one_or_none()
+    user = result.scalar_one_or_none()
 
-    if not res:
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    qu = select(PostModel).options(selectinload(PostModel.author)).where(PostModel.Author_id == id)
-    resu = await db.execute(qu)
+    for like in user.likes:
+        await db.delete(like)
 
-    post = resu.scalars().all()
-    if post:
-        for items in post:
-            await db.delete(items)
+    for comment in user.comments:
+        await db.delete(comment)
 
-        await db.delete(res)
-        await db.commit()
+    for post in user.posts:
 
-        return {"success": True}
-    else:
-        await db.delete(res)
-        await db.commit()
+        for l in post.likes:
+            await db.delete(l)
+        for c in post.comments:
+            await db.delete(c)
+        await db.delete(post)
 
-        return {"success": True}
+    await db.delete(user)
+    await db.commit()
 
+    return {
+        "success": True,
+        "message": "User and all related data deleted successfully"
+    }

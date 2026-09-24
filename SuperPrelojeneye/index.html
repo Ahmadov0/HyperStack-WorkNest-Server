@@ -1,157 +1,574 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SuperPrelojeneye App</title>
-    <!-- Tailwind CSS для крутого дизайна -->
+    <title>SuperPrelojeneye Pro // Workspace</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js для легковесной магии на фронтенде -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darker: '#030305',
+                        cardbg: '#0d0d16',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #030305; color: #f8fafc; overflow-x: hidden; }
+        .glass-card {
+            background: rgba(13, 13, 22, 0.8);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        .glow-hover:hover {
+            box-shadow: 0 0 35px -5px rgba(168, 85, 247, 0.3);
+            border-color: rgba(168, 85, 247, 0.4);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #fff 30%, #a855f7 70%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+            box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.4);
+            transition: all 0.2s ease;
+        }
+        .btn-gradient:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px -5px rgba(124, 58, 237, 0.6);
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #030305; }
+        ::-webkit-scrollbar-thumb { background: #1e1b4b; border-radius: 3px; }
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans" x-data="app()">
+<body class="min-h-screen flex flex-col selection:bg-purple-600 selection:text-white" x-data="app()" x-cloak>
 
-    <!-- Шапка / Навигация -->
-    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-wider text-indigo-400">⚡ SuperPrelojeneye</h1>
+    <!-- Тосты уведомлений -->
+    <div class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div class="pointer-events-auto glass-card px-4 py-3.5 rounded-2xl flex items-center gap-3 shadow-2xl border-l-4 transition-all duration-300" :class="toast.type === 'error' ? 'border-l-rose-500 bg-rose-950/30' : 'border-l-emerald-500 bg-emerald-950/30'">
+                <span class="text-lg" x-text="toast.type === 'error' ? '❌' : '⚡'"></span>
+                <p class="text-xs font-semibold text-slate-200" x-text="toast.text"></p>
+            </div>
+        </template>
+    </div>
+
+    <!-- Шапка -->
+    <header class="glass-card border-b border-white/[0.08] sticky top-0 z-40 px-4 lg:px-8 py-4">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl btn-gradient flex items-center justify-center text-white font-black text-lg shadow-lg">
+                    ⚡
+                </div>
+                <div>
+                    <h1 class="font-black tracking-wider text-sm text-gradient">
+                        SuperPost
+                    </h1>
+                    <p class="text-[9px] text-purple-400 font-bold tracking-widest uppercase">Workspace Pro</p>
+                </div>
+            </div>
 
             <template x-if="currentUser">
-                <div class="flex items-center gap-4">
-                    <span class="text-sm bg-slate-700 px-3 py-1 rounded-full text-indigo-200">
-                        👤 <span x-text="currentUser.username"></span> (ID: <span x-text="currentUser.id"></span>)
-                    </span>
-                    <button @click="logout()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1 rounded text-sm transition">Выйти</button>
+                <div class="flex items-center gap-3">
+                    <div class="hidden sm:flex items-center gap-2 bg-black/40 border border-white/10 px-3.5 py-2 rounded-2xl">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-xs font-medium text-slate-300">@<strong class="text-purple-300 font-bold break-all" x-text="currentUser.username"></strong></span>
+                    </div>
+                    <button @click="logout()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3.5 py-2 rounded-xl text-xs font-bold transition active:scale-95">
+                        Выйти
+                    </button>
                 </div>
-            </template>
-            <template x-if="!currentUser">
-                <span class="text-sm text-slate-400">Авторизуйтесь, чтобы начать</span>
             </template>
         </div>
     </header>
 
-    <!-- Основной контент -->
-    <main class="max-w-4xl mx-auto p-4 mt-6">
+    <!-- Основной контейнер -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 lg:p-8">
 
-        <!-- 1. Блок авторизации / входа / регистрации -->
-        <div x-show="!currentUser" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl max-w-md mx-auto">
-            <h2 class="text-2xl font-semibold mb-4 text-center text-indigo-300" x-text="isLoginMode ? 'Вход в аккаунт' : 'Регистрация'"></h2>
+        <!-- Авторизация -->
+        <div x-show="!currentUser" class="max-w-md mx-auto mt-12">
+            <div class="glass-card p-8 sm:p-10 rounded-3xl relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-40 h-40 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -left-20 -bottom-20 w-40 h-40 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm text-slate-400 mb-1">Имя пользователя</label>
-                    <input type="text" x-model="authForm.username" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="block text-sm text-slate-400 mb-1">Пароль</label>
-                    <input type="password" x-model="authForm.password" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500">
+                <div class="text-center mb-8 relative z-10">
+                    <h2 class="text-2xl font-black tracking-tight text-white mb-2" x-text="isLoginMode ? 'С возвращением!' : 'Создать аккаунт'"></h2>
+                    <p class="text-xs text-slate-400" x-text="isLoginMode ? 'Войдите в систему для доступа к платформе' : 'Зарегистрируйтесь за пару секунд'"></p>
                 </div>
 
-                <div class="flex gap-2 pt-2">
-                    <button @click="submitAuth()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded font-medium transition" x-text="isLoginMode ? 'Войти' : 'Зарегистрироваться'"></button>
-                </div>
+                <div class="space-y-4 relative z-10">
+                    <div>
+                        <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-2">Логин</label>
+                        <input type="text" x-model="authForm.username" placeholder="Ваш никнейм" class="w-full bg-black/50 border border-white/10 rounded-2xl px-4 py-3.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-2">Пароль</label>
+                        <input type="password" x-model="authForm.password" placeholder="••••••••" class="w-full bg-black/50 border border-white/10 rounded-2xl px-4 py-3.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                    </div>
 
-                <p class="text-center text-sm text-slate-400 mt-4 cursor-pointer hover:underline" @click="isLoginMode = !isLoginMode">
-                    <span x-text="isLoginMode ? 'Нет аккаунта? Зарегистрируйтесь' : 'Уже есть аккаунт? Войдите'"></span>
-                </p>
+                    <div class="pt-2">
+                        <button @click="submitAuth()" :disabled="isLoadingAuth" class="w-full btn-gradient text-white font-bold py-4 rounded-2xl text-xs transition flex items-center justify-center gap-3 disabled:opacity-70">
+                            <template x-if="isLoadingAuth">
+                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </template>
+                            <span x-text="isLoadingAuth ? 'Обработка...' : (isLoginMode ? 'Войти в систему' : 'Зарегистрироваться')"></span>
+                        </button>
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <button @click="isLoginMode = !isLoginMode" class="text-xs text-purple-400 hover:text-purple-300 transition font-bold">
+                            <span x-text="isLoginMode ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти'"></span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- 2. Основное приложение (когда вошел) -->
+        <!-- Интерфейс системы -->
         <div x-show="currentUser" class="space-y-6">
 
-            <!-- Навигационные вкладки -->
-            <div class="flex gap-2 border-b border-slate-700 pb-3">
-                <button @click="activeTab = 'feed'; fetchAllPosts()" :class="activeTab === 'feed' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-4 py-2 rounded transition font-medium">🌍 Общая лента</button>
-                <button @click="activeTab = 'my'; fetchMyPosts()" :class="activeTab === 'my' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-4 py-2 rounded transition font-medium">📝 Мои посты</button>
-                <button @click="activeTab = 'create'" :class="activeTab === 'create' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'" class="px-4 py-2 rounded transition font-medium">➕ Создать пост</button>
+            <!-- Навигация -->
+            <div class="glass-card p-1.5 rounded-2xl flex items-center gap-1 overflow-x-auto">
+                <button @click="activeTab = 'feed'; fetchAllPosts()" :class="activeTab === 'feed' ? 'bg-purple-950/80 text-purple-200 border-purple-500/40 shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.02] border-transparent'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition border flex items-center justify-center gap-2 whitespace-nowrap">
+                    <span>🌍</span> Общая лента
+                </button>
+                <button @click="activeTab = 'my'; fetchMyPosts()" :class="activeTab === 'my' ? 'bg-purple-950/80 text-purple-200 border-purple-500/40 shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.02] border-transparent'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition border flex items-center justify-center gap-2 whitespace-nowrap">
+                    <span>📝</span> Мои посты
+                </button>
+                <button @click="activeTab = 'create'" :class="activeTab === 'create' ? 'bg-purple-950/80 text-purple-200 border-purple-500/40 shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.02] border-transparent'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition border flex items-center justify-center gap-2 whitespace-nowrap">
+                    <span>➕</span> Создать пост
+                </button>
+                <button @click="activeTab = 'settings'; loadProfileData()" :class="activeTab === 'settings' ? 'bg-purple-950/80 text-purple-200 border-purple-500/40 shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.02] border-transparent'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition border flex items-center justify-center gap-2 whitespace-nowrap">
+                    <span>⚙️</span> Профиль
+                </button>
             </div>
 
             <!-- Вкладка: Общая лента -->
             <div x-show="activeTab === 'feed'" class="space-y-4">
-                <h2 class="text-xl font-semibold text-indigo-300">Публичная лента постов</h2>
-                <template x-for="post in allPosts" :key="post.id">
-                    <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-lg font-bold text-indigo-400" x-text="post.title"></h3>
-                            <span class="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300">Автор: <span x-text="post.author ? post.author.username : 'Неизвестен'"></span></span>
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 px-1">
+                    <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-400">Публичные записи</h2>
+
+                    <!-- Блок поиска -->
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <div class="relative flex-1 sm:w-64">
+                            <input type="text" x-model="searchQuery" @keydown.enter="searchPosts()" placeholder="Поиск по названию..." class="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
                         </div>
-                        <p class="text-slate-300 font-semibold text-sm mb-1" x-text="post.content"></p>
-                        <p class="text-slate-400 text-sm" x-text="post.body"></p>
+                        <button @click="searchPosts()" class="btn-gradient text-white px-4 py-2 rounded-xl text-xs font-bold transition shrink-0">
+                            🔍 Найти
+                        </button>
+                        <template x-if="isSearching">
+                            <button @click="resetSearch()" class="glass-card hover:bg-white/5 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition">
+                                Сбросить
+                            </button>
+                        </template>
                     </div>
-                </template>
-                <p x-show="allPosts.length === 0" class="text-slate-500">Постов пока нет.</p>
+
+                    <button @click="fetchAllPosts()" :disabled="isLoadingFeed" class="glass-card px-3.5 py-2 rounded-xl text-xs font-bold text-purple-300 hover:border-purple-500/40 transition flex items-center gap-2 shrink-0">
+                        <svg :class="{'animate-spin': isLoadingFeed}" class="h-3.5 w-3.5 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span>Обновить</span>
+                    </button>
+                </div>
+
+                <!-- Загрузка ленты -->
+                <div x-show="isLoadingFeed" class="py-24 flex flex-col items-center justify-center gap-4 glass-card rounded-3xl">
+                    <div class="relative w-12 h-12">
+                        <div class="absolute inset-0 rounded-full border-4 border-purple-500/20"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-purple-500 border-t-transparent animate-spin"></div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs font-extrabold text-slate-200 tracking-wide">Загрузка данных...</p>
+                        <p class="text-[10px] text-purple-400 mt-1">Пожалуйста, подождите</p>
+                    </div>
+                </div>
+
+                <div class="grid gap-4" x-show="!isLoadingFeed && allPosts.length > 0">
+                    <template x-for="post in allPosts" :key="post.id">
+                        <div class="glass-card glow-hover p-6 rounded-3xl space-y-3 transition duration-300 overflow-hidden">
+                            <div class="flex justify-between items-start gap-4">
+                                <h3 class="text-base font-bold text-purple-200 break-all" x-text="post.title"></h3>
+                                <span class="text-[10px] font-bold bg-purple-950/60 text-purple-300 px-3 py-1 rounded-full border border-purple-500/20 shrink-0 max-w-[150px] truncate">
+                                    @<span x-text="post.author ? post.author.username : 'unknown'"></span>
+                                </span>
+                            </div>
+                            <p class="text-xs font-semibold text-slate-300 break-all" x-text="post.content"></p>
+                            <div class="bg-black/40 p-4 rounded-2xl border border-white/[0.02] text-xs text-slate-400 leading-relaxed break-all" x-text="post.body"></div>
+
+                            <!-- Кнопки лайков и комментариев (С лоадером и защитой) -->
+                            <div class="pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                                <button @click="toggleLike(post)" :disabled="post.isLiking" class="flex items-center gap-2 text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3.5 py-2 rounded-xl transition active:scale-95 border border-rose-500/20 disabled:opacity-50">
+                                    <template x-if="post.isLiking">
+                                        <svg class="animate-spin h-3.5 w-3.5 text-rose-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    </template>
+                                    <template x-if="!post.isLiking">
+                                        <span>❤️</span>
+                                    </template>
+                                    <span x-text="post.likes_count || 0"></span>
+                                </button>
+                                <button @click="post.showComments = !post.showComments" class="flex items-center gap-2 text-xs font-bold text-purple-300 bg-purple-950/40 hover:bg-purple-950/60 px-3.5 py-2 rounded-xl transition border border-purple-500/20">
+                                    <span>💬</span>
+                                    <span x-text="(post.comments ? post.comments.length : 0) + ' коммент.'"></span>
+                                </button>
+                            </div>
+
+                            <!-- Блок комментариев -->
+                            <div x-show="post.showComments" x-cloak class="mt-3 pt-3 border-t border-white/[0.04] space-y-3">
+                                <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                    <template x-for="comment in post.comments" :key="comment.id">
+                                        <div class="bg-black/30 p-3 rounded-xl border border-white/[0.02] flex justify-between items-start gap-2">
+                                            <div>
+                                                <p class="text-[10px] font-bold text-purple-300">@<span x-text="comment.author"></span></p>
+                                                <p class="text-xs text-slate-200 mt-0.5 break-all" x-text="comment.text"></p>
+                                            </div>
+                                            <template x-if="currentUser && comment.author === currentUser.username">
+                                                <button @click="deleteComment(comment.id, post)" :disabled="comment.isDeleting" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition shrink-0 disabled:opacity-50 flex items-center">
+                                                    <template x-if="comment.isDeleting">
+                                                        <svg class="animate-spin h-3 w-3 text-rose-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    </template>
+                                                    <template x-if="!comment.isDeleting">
+                                                        <span>✕</span>
+                                                    </template>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <div x-show="!post.comments || post.comments.length === 0" class="text-center py-2 text-[11px] text-slate-500">
+                                        Нет комментариев. Будьте первыми!
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <input type="text" x-model="post.newCommentText" @keydown.enter="addComment(post)" placeholder="Написать комментарий..." class="flex-1 bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                                    <button @click="addComment(post)" :disabled="post.isAddingComment" class="btn-gradient text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0 flex items-center justify-center gap-2 disabled:opacity-70">
+                                        <template x-if="post.isAddingComment">
+                                            <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        </template>
+                                        <span x-text="post.isAddingComment ? '...' : 'Отправить'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div x-show="!isLoadingFeed && allPosts.length === 0" class="text-center py-20 glass-card rounded-3xl">
+                    <p class="text-xs text-slate-400 font-medium">Постов пока нет.</p>
+                </div>
             </div>
 
             <!-- Вкладка: Мои посты -->
             <div x-show="activeTab === 'my'" class="space-y-4">
-                <h2 class="text-xl font-semibold text-indigo-300">Мои записи</h2>
-                <template x-for="post in myPosts" :key="post.id">
-                    <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow relative">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 class="text-lg font-bold text-indigo-400" x-text="post.title"></h3>
-                                <span class="text-xs px-2 py-0.5 rounded" :class="post.private ? 'bg-amber-900 text-amber-200' : 'bg-emerald-900 text-emerald-200'" x-text="post.private ? '🔒 Личный' : '🌍 Публичный'"></span>
-                            </div>
-                            <button @click="deletePost(post.id)" class="text-rose-400 hover:text-rose-300 text-sm bg-slate-900 px-3 py-1 rounded border border-slate-700">Удалить</button>
-                        </div>
-                        <p class="text-slate-300 font-semibold text-sm mb-1" x-text="post.content"></p>
-                        <p class="text-slate-400 text-sm" x-text="post.body"></p>
+                <div class="flex justify-between items-center px-1">
+                    <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-400">Ваши записи</h2>
+                    <button @click="fetchMyPosts()" :disabled="isLoadingMy" class="glass-card px-3.5 py-2 rounded-xl text-xs font-bold text-purple-300 hover:border-purple-500/40 transition flex items-center gap-2">
+                        <svg :class="{'animate-spin': isLoadingMy}" class="h-3.5 w-3.5 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span>Обновить</span>
+                    </button>
+                </div>
+
+                <div x-show="isLoadingMy" class="py-24 flex flex-col items-center justify-center gap-4 glass-card rounded-3xl">
+                    <div class="relative w-12 h-12">
+                        <div class="absolute inset-0 rounded-full border-4 border-purple-500/20"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-purple-500 border-t-transparent animate-spin"></div>
                     </div>
-                </template>
-                <p x-show="myPosts.length === 0" class="text-slate-500">У вас пока нет созданных постов.</p>
+                    <div class="text-center">
+                        <p class="text-xs font-extrabold text-slate-200 tracking-wide">Загрузка ваших записей...</p>
+                        <p class="text-[10px] text-purple-400 mt-1">Ожидаем ответ от сервера</p>
+                    </div>
+                </div>
+
+                <div class="grid gap-4" x-show="!isLoadingMy && myPosts.length > 0">
+                    <template x-for="post in myPosts" :key="post.id">
+                        <div class="glass-card glow-hover p-6 rounded-3xl space-y-3 transition overflow-hidden">
+                            <div class="flex justify-between items-start gap-4">
+                                <div class="space-y-1.5 flex-1 min-w-0 pr-2">
+                                    <h3 class="text-base font-bold text-purple-200 break-all" x-text="post.title"></h3>
+                                    <span class="text-[10px] font-bold px-3 py-1 rounded-full inline-block" :class="post.private ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'" x-text="post.private ? '🔒 Личный' : '🌍 Публичный'"></span>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button @click="openEditPost(post)" class="glass-card hover:border-purple-500/40 text-purple-300 text-xs px-3.5 py-2 rounded-xl font-bold transition">Изменить</button>
+                                    <button @click="confirmDeletePost(post.id)" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs px-3.5 py-2 rounded-xl font-bold transition">Удалить</button>
+                                </div>
+                            </div>
+                            <p class="text-xs font-semibold text-slate-300 break-all" x-text="post.content"></p>
+                            <div class="bg-black/40 p-4 rounded-2xl border border-white/[0.02] text-xs text-slate-400 leading-relaxed break-all" x-text="post.body"></div>
+
+                            <!-- Кнопки лайков и комментариев (С лоадером и защитой) -->
+                            <div class="pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                                <button @click="toggleLike(post)" :disabled="post.isLiking" class="flex items-center gap-2 text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3.5 py-2 rounded-xl transition active:scale-95 border border-rose-500/20 disabled:opacity-50">
+                                    <template x-if="post.isLiking">
+                                        <svg class="animate-spin h-3.5 w-3.5 text-rose-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    </template>
+                                    <template x-if="!post.isLiking">
+                                        <span>❤️</span>
+                                    </template>
+                                    <span x-text="post.likes_count || 0"></span>
+                                </button>
+                                <button @click="post.showComments = !post.showComments" class="flex items-center gap-2 text-xs font-bold text-purple-300 bg-purple-950/40 hover:bg-purple-950/60 px-3.5 py-2 rounded-xl transition border border-purple-500/20">
+                                    <span>💬</span>
+                                    <span x-text="(post.comments ? post.comments.length : 0) + ' коммент.'"></span>
+                                </button>
+                            </div>
+
+                            <!-- Блок комментариев -->
+                            <div x-show="post.showComments" x-cloak class="mt-3 pt-3 border-t border-white/[0.04] space-y-3">
+                                <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                    <template x-for="comment in post.comments" :key="comment.id">
+                                        <div class="bg-black/30 p-3 rounded-xl border border-white/[0.02] flex justify-between items-start gap-2">
+                                            <div>
+                                                <p class="text-[10px] font-bold text-purple-300">@<span x-text="comment.author"></span></p>
+                                                <p class="text-xs text-slate-200 mt-0.5 break-all" x-text="comment.text"></p>
+                                            </div>
+                                            <template x-if="currentUser && comment.author === currentUser.username">
+                                                <button @click="deleteComment(comment.id, post)" :disabled="comment.isDeleting" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition shrink-0 disabled:opacity-50 flex items-center">
+                                                    <template x-if="comment.isDeleting">
+                                                        <svg class="animate-spin h-3 w-3 text-rose-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    </template>
+                                                    <template x-if="!comment.isDeleting">
+                                                        <span>✕</span>
+                                                    </template>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <div x-show="!post.comments || post.comments.length === 0" class="text-center py-2 text-[11px] text-slate-500">
+                                        Пока нет комментариев.
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <input type="text" x-model="post.newCommentText" @keydown.enter="addComment(post)" placeholder="Написать комментарий..." class="flex-1 bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                                    <button @click="addComment(post)" :disabled="post.isAddingComment" class="btn-gradient text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0 flex items-center justify-center gap-2 disabled:opacity-70">
+                                        <template x-if="post.isAddingComment">
+                                            <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        </template>
+                                        <span x-text="post.isAddingComment ? '...' : 'Отправить'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div x-show="!isLoadingMy && myPosts.length === 0" class="text-center py-20 glass-card rounded-3xl">
+                    <p class="text-xs text-slate-400 font-medium">У вас нет созданных записей.</p>
+                </div>
             </div>
 
             <!-- Вкладка: Создать пост -->
-            <div x-show="activeTab === 'create'" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl max-w-lg">
-                <h2 class="text-xl font-semibold mb-4 text-indigo-300">Создать новый пост</h2>
-                <div class="space-y-4">
+            <div x-show="activeTab === 'create'" class="max-w-xl mx-auto">
+                <div class="glass-card p-8 sm:p-10 rounded-3xl space-y-6">
                     <div>
-                        <label class="block text-sm text-slate-400 mb-1">Заголовок (title)</label>
-                        <input type="text" x-model="newPostForm.title" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500">
+                        <h2 class="text-xl font-black tracking-tight">Новая запись</h2>
+                        <p class="text-xs text-slate-400 mt-1">Опубликуйте свою мысль в системе</p>
                     </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-2">Заголовок</label>
+                            <input type="text" x-model="newPostForm.title" placeholder="Введите заголовок..." class="w-full bg-black/50 border border-white/10 rounded-2xl px-4.5 py-3.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-2">Краткое содержание</label>
+                            <input type="text" x-model="newPostForm.content" placeholder="Краткое описание..." class="w-full bg-black/50 border border-white/10 rounded-2xl px-4.5 py-3.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-2">Текст</label>
+                            <textarea x-model="newPostForm.body" rows="4" placeholder="Основной текст записи..." class="w-full bg-black/50 border border-white/10 rounded-2xl p-4.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition resize-none"></textarea>
+                        </div>
+                        <div class="flex items-center gap-3 pt-1">
+                            <input type="checkbox" x-model="newPostForm.private" id="priv" class="w-4 h-4 rounded bg-black border-white/20 text-purple-600 focus:ring-0 cursor-pointer">
+                            <label for="priv" class="text-xs font-bold text-slate-300 cursor-pointer">Приватный пост</label>
+                        </div>
+                        <div class="pt-2">
+                            <button @click="createPost()" :disabled="isLoadingCreate" class="w-full btn-gradient text-white font-bold py-4 rounded-2xl text-xs transition flex items-center justify-center gap-3 disabled:opacity-70">
+                                <template x-if="isLoadingCreate">
+                                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                </template>
+                                <span x-text="isLoadingCreate ? 'Публикация записи...' : 'Опубликовать запись'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка: Профиль -->
+            <div x-show="activeTab === 'settings'" class="max-w-xl mx-auto">
+                <div class="glass-card p-8 sm:p-10 rounded-3xl space-y-6">
                     <div>
-                        <label class="block text-sm text-slate-400 mb-1">Краткое содержание (content)</label>
-                        <input type="text" x-model="newPostForm.content" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500">
+                        <h2 class="text-xl font-black tracking-tight">Настройки профиля</h2>
+                        <p class="text-xs text-slate-400 mt-1">Управление учетными данными</p>
                     </div>
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Основной текст (body)</label>
-                        <textarea x-model="newPostForm.body" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded p-2 focus:outline-none focus:border-indigo-500"></textarea>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-2">Имя пользователя</label>
+                            <input type="text" x-model="updateUserForm.username" class="w-full bg-black/50 border border-white/10 rounded-2xl px-4.5 py-3.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-2">Новый пароль</label>
+                            <input type="password" x-model="updateUserForm.password" placeholder="Оставьте пустым, если не меняете" class="w-full bg-black/50 border border-white/10 rounded-2xl px-4.5 py-3.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                        </div>
+                        <div class="pt-2 flex gap-3">
+                            <button @click="updateProfile()" :disabled="isLoadingUpdate" class="flex-1 btn-gradient text-white font-bold py-3.5 rounded-2xl text-xs transition flex items-center justify-center gap-2 disabled:opacity-70">
+                                <template x-if="isLoadingUpdate">
+                                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                </template>
+                                <span x-text="isLoadingUpdate ? 'Сохранение...' : 'Сохранить изменения'"></span>
+                            </button>
+                            <button @click="confirmDeleteAccount()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-5 py-3.5 rounded-2xl text-xs font-bold transition shrink-0">Удалить аккаунт</button>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" x-model="newPostForm.private" id="priv" class="w-4 h-4 rounded bg-slate-900 border-slate-700">
-                        <label for="priv" class="text-sm text-slate-300">Сделать пост приватным (личным)</label>
-                    </div>
-                    <button @click="createPost()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded font-medium transition">Опубликовать</button>
                 </div>
             </div>
 
         </div>
     </main>
 
-    <!-- Скрипты взаимодействия с твоим FastAPI бэкендом -->
+    <!-- Модалка: Редактирование поста -->
+    <div x-show="editingPost !== null" x-cloak class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div class="glass-card p-6 sm:p-8 rounded-3xl max-w-lg w-full space-y-4">
+            <h2 class="text-lg font-bold">Редактировать запись</h2>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-1.5">Заголовок</label>
+                    <input type="text" x-model="editPostForm.title" class="w-full bg-black/50 border border-white/10 rounded-2xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-1.5">Краткое содержание</label>
+                    <input type="text" x-model="editPostForm.content" class="w-full bg-black/50 border border-white/10 rounded-2xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-purple-300 uppercase tracking-wider mb-1.5">Текст</label>
+                    <textarea x-model="editPostForm.body" rows="4" class="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-xs text-slate-200 focus:outline-none focus:border-purple-500 transition resize-none"></textarea>
+                </div>
+                <div class="flex items-center gap-3 pt-1">
+                    <input type="checkbox" x-model="editPostForm.private" id="editPriv" class="w-4 h-4 rounded bg-black border-white/20 text-purple-600 focus:ring-0 cursor-pointer">
+                    <label for="editPriv" class="text-xs font-bold text-slate-300 cursor-pointer">Приватный пост</label>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button @click="saveEditedPost()" :disabled="isLoadingEditPost" class="flex-1 btn-gradient text-white font-bold py-3 rounded-2xl text-xs transition flex items-center justify-center gap-2 disabled:opacity-70">
+                        <template x-if="isLoadingEditPost">
+                            <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </template>
+                        <span x-text="isLoadingEditPost ? 'Сохранение...' : 'Сохранить'"></span>
+                    </button>
+                    <button @click="editingPost = null" class="glass-card hover:bg-white/5 text-slate-300 px-5 py-3 rounded-2xl text-xs font-bold transition">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка: Удаление поста -->
+    <div x-show="postToDelete !== null" x-cloak class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div class="glass-card p-8 rounded-3xl max-w-xs w-full text-center space-y-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-xl mx-auto">⚠️</div>
+            <h3 class="text-base font-bold">Удалить запись?</h3>
+            <p class="text-xs text-slate-400">Это действие невозможно отменить.</p>
+            <div class="flex gap-2 pt-2">
+                <button @click="deletePost()" :disabled="isLoadingDeletePost" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-2xl text-xs transition flex items-center justify-center gap-2 disabled:opacity-70">
+                    <template x-if="isLoadingDeletePost">
+                        <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </template>
+                    <span x-text="isLoadingDeletePost ? 'Удаление...' : 'Удалить'"></span>
+                </button>
+                <button @click="postToDelete = null" class="glass-card hover:bg-white/5 text-slate-300 px-4 py-3 rounded-2xl text-xs font-bold transition">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка: Удаление аккаунта -->
+    <div x-show="showDeleteAccountModal" x-cloak class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div class="glass-card p-8 rounded-3xl max-w-xs w-full text-center space-y-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-xl mx-auto">🔥</div>
+            <h3 class="text-base font-bold">Удалить аккаунт?</h3>
+            <p class="text-xs text-slate-400">Все связанные данные будут стерты навсегда.</p>
+            <div class="flex gap-2 pt-2">
+                <button @click="deleteAccount()" :disabled="isLoadingDeleteAccount" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-2xl text-xs transition flex items-center justify-center gap-2 disabled:opacity-70">
+                    <template x-if="isLoadingDeleteAccount">
+                        <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </template>
+                    <span x-text="isLoadingDeleteAccount ? 'Удаление...' : 'Удалить'"></span>
+                </button>
+                <button @click="showDeleteAccountModal = false" class="glass-card hover:bg-white/5 text-slate-300 px-4 py-3 rounded-2xl text-xs font-bold transition">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Логика приложения (Alpine.js) -->
     <script>
         function app() {
             return {
-                apiUrl: 'http://127.0.0.1:8000', // Адрес твоего запущенного бэкенда
+                apiUrl: 'http://127.0.0.1:8000',
                 currentUser: JSON.parse(localStorage.getItem('currentUser')) || null,
                 isLoginMode: true,
                 activeTab: 'feed',
 
+                // Поиск
+                searchQuery: '',
+                isSearching: false,
+
+                // Состояния загрузки
+                isLoadingAuth: false,
+                isLoadingFeed: false,
+                isLoadingMy: false,
+                isLoadingCreate: false,
+                isLoadingUpdate: false,
+                isLoadingEditPost: false,
+                isLoadingDeletePost: false,
+                isLoadingDeleteAccount: false,
+
+                postToDelete: null,
+                showDeleteAccountModal: false,
+                toasts: [],
+
                 authForm: { username: '', password: '' },
                 newPostForm: { title: '', content: '', body: '', private: false },
+                updateUserForm: { username: '', password: '' },
 
                 allPosts: [],
                 myPosts: [],
 
-                init() {
-                    if (this.currentUser) {
-                        this.fetchAllPosts();
+                editingPost: null,
+                editPostForm: { title: '', content: '', body: '', private: false },
+
+                showToast(text, type = 'success') {
+                    const id = Date.now();
+                    this.toasts.push({ id, text, type });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 3500);
+                },
+
+                getErrorMessage(err) {
+                    if (!err) return 'Произошла ошибка';
+                    if (typeof err.detail === 'string') return err.detail;
+                    if (Array.isArray(err.detail)) {
+                        return err.detail.map(e => e.msg || JSON.stringify(e)).join(', ');
                     }
+                    if (typeof err.detail === 'object' && err.detail !== null) {
+                        return JSON.stringify(err.detail);
+                    }
+                    return 'Произошла ошибка';
+                },
+
+                init() {
+                    if (this.currentUser) this.fetchAllPosts();
                 },
 
                 async submitAuth() {
                     const endpoint = this.isLoginMode ? '/login' : '/auth';
+                    this.isLoadingAuth = true;
                     try {
                         const res = await fetch(this.apiUrl + endpoint, {
                             method: 'POST',
@@ -163,50 +580,226 @@
                             this.currentUser = { id: data.id, username: data.username };
                             localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
                             this.authForm = { username: '', password: '' };
+                            this.showToast(this.isLoginMode ? 'Успешный вход в систему!' : 'Аккаунт успешно создан!');
                             this.fetchAllPosts();
                         } else {
-                            alert(data.detail || 'Ошибка авторизации');
+                            this.showToast(this.getErrorMessage(data), 'error');
                         }
                     } catch (e) {
-                        alert('Не удалось подключиться к серверу! Убедитесь, что FastAPI запущен.');
+                        this.showToast('Нет связи с сервером!', 'error');
+                    } finally {
+                        this.isLoadingAuth = false;
                     }
                 },
 
                 logout() {
                     this.currentUser = null;
                     localStorage.removeItem('currentUser');
+                    this.showToast('Вы вышли из аккаунта');
                 },
 
                 async fetchAllPosts() {
+                    this.isSearching = false;
+                    this.searchQuery = '';
+                    this.isLoadingFeed = true;
                     try {
                         const res = await fetch(this.apiUrl + '/getAllPosts');
                         if (res.ok) {
-                            this.allPosts = await res.json();
+                            const posts = await res.json();
+                            for (let post of posts) {
+                                post.comments = [];
+                                post.likes_count = post.likes_count || 0;
+                                post.newCommentText = '';
+                                post.showComments = false;
+                                post.isAddingComment = false;
+                                post.isLiking = false;
+
+                                try {
+                                    const comRes = await fetch(`${this.apiUrl}/post/${post.id}/comments`);
+                                    if (comRes.ok) {
+                                        const rawComments = await comRes.json();
+                                        post.comments = rawComments.map(c => ({ ...c, isDeleting: false }));
+                                    }
+                                } catch (err) {}
+                            }
+                            this.allPosts = posts;
+                        } else {
+                            this.allPosts = [];
                         }
-                    } catch (e) { console.error(e); }
+                    } catch (e) { this.allPosts = []; }
+                    finally { this.isLoadingFeed = false; }
+                },
+
+                async searchPosts() {
+                    if (!this.searchQuery || !this.searchQuery.trim()) {
+                        this.fetchAllPosts();
+                        return;
+                    }
+                    this.isLoadingFeed = true;
+                    this.isSearching = true;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/serch?post_title=${encodeURIComponent(this.searchQuery.trim())}`);
+                        if (res.ok) {
+                            const posts = await res.json();
+                            for (let post of posts) {
+                                post.comments = [];
+                                post.likes_count = post.likes_count || 0;
+                                post.newCommentText = '';
+                                post.showComments = false;
+                                post.isAddingComment = false;
+                                post.isLiking = false;
+
+                                try {
+                                    const comRes = await fetch(`${this.apiUrl}/post/${post.id}/comments`);
+                                    if (comRes.ok) {
+                                        const rawComments = await comRes.json();
+                                        post.comments = rawComments.map(c => ({ ...c, isDeleting: false }));
+                                    }
+                                } catch (err) {}
+                            }
+                            this.allPosts = posts;
+                        } else {
+                            this.allPosts = [];
+                            this.showToast('Ничего не найдено', 'error');
+                        }
+                    } catch (e) {
+                        this.allPosts = [];
+                        this.showToast('Ошибка поиска', 'error');
+                    } finally {
+                        this.isLoadingFeed = false;
+                    }
+                },
+
+                resetSearch() {
+                    this.searchQuery = '';
+                    this.isSearching = false;
+                    this.fetchAllPosts();
                 },
 
                 async fetchMyPosts() {
                     if (!this.currentUser) return;
+                    this.isLoadingMy = true;
                     try {
                         const res = await fetch(`${this.apiUrl}/getmyposts/${this.currentUser.id}`);
                         if (res.ok) {
-                            this.myPosts = await res.json();
+                            const posts = await res.json();
+                            for (let post of posts) {
+                                post.comments = [];
+                                post.likes_count = post.likes_count || 0;
+                                post.newCommentText = '';
+                                post.showComments = false;
+                                post.isAddingComment = false;
+                                post.isLiking = false;
+
+                                try {
+                                    const comRes = await fetch(`${this.apiUrl}/post/${post.id}/comments`);
+                                    if (comRes.ok) {
+                                        const rawComments = await comRes.json();
+                                        post.comments = rawComments.map(c => ({ ...c, isDeleting: false }));
+                                    }
+                                } catch (err) {}
+                            }
+                            this.myPosts = posts;
                         } else {
                             this.myPosts = [];
                         }
                     } catch (e) { this.myPosts = []; }
+                    finally { this.isLoadingMy = false; }
+                },
+
+                // Защищенный лайк (ожидание + переключение добавления/удаления с сервера)
+                async toggleLike(post) {
+                    if (!this.currentUser || post.isLiking) return;
+                    post.isLiking = true; // Блокируем кнопку и включаем лоадер
+
+                    try {
+                        const res = await fetch(`${this.apiUrl}/post/${post.id}/like?user_id=${this.currentUser.id}`, {
+                            method: 'POST'
+                        });
+                        const data = await res.json();
+
+                        if (res.ok) {
+                            // Сервер сам определяет: добавить или убрать лайк, и возвращает актуальное число
+                            [this.allPosts, this.myPosts].forEach(list => {
+                                const target = list.find(p => p.id === post.id);
+                                if (target) {
+                                    target.likes_count = data.likes_count;
+                                }
+                            });
+                        } else {
+                            this.showToast(this.getErrorMessage(data), 'error');
+                        }
+                    } catch (e) {
+                        this.showToast('Ошибка сети', 'error');
+                    } finally {
+                        post.isLiking = false; // Возвращаем обычную иконку и разблокируем кнопку
+                    }
+                },
+
+                async addComment(post) {
+                    if (!this.currentUser || !post.newCommentText || !post.newCommentText.trim() || post.isAddingComment) return;
+                    post.isAddingComment = true;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/post/${post.id}/comment?user_id=${this.currentUser.id}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: post.newCommentText.trim() })
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            const newCom = { ...data.comment, isDeleting: false };
+                            [this.allPosts, this.myPosts].forEach(list => {
+                                const target = list.find(p => p.id === post.id);
+                                if (target) {
+                                    if (!target.comments) target.comments = [];
+                                    target.comments.push(newCom);
+                                    target.newCommentText = '';
+                                }
+                            });
+                            this.showToast('Комментарий добавлен!');
+                        } else {
+                            this.showToast(this.getErrorMessage(data), 'error');
+                        }
+                    } catch (e) {
+                        this.showToast('Ошибка сети', 'error');
+                    } finally {
+                        post.isAddingComment = false;
+                    }
+                },
+
+                async deleteComment(commentId, post) {
+                    if (!this.currentUser) return;
+                    const comment = post.comments.find(c => c.id === commentId);
+                    if (!comment || comment.isDeleting) return;
+
+                    comment.isDeleting = true;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/comment/${commentId}?user_id=${this.currentUser.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (res.ok) {
+                            [this.allPosts, this.myPosts].forEach(list => {
+                                const target = list.find(p => p.id === post.id);
+                                if (target && target.comments) {
+                                    target.comments = target.comments.filter(c => c.id !== commentId);
+                                }
+                            });
+                            this.showToast('Комментарий удален');
+                        } else {
+                            const err = await res.json();
+                            this.showToast(this.getErrorMessage(err), 'error');
+                            comment.isDeleting = false;
+                        }
+                    } catch (e) {
+                        this.showToast('Ошибка сети', 'error');
+                        comment.isDeleting = false;
+                    }
                 },
 
                 async createPost() {
                     if (!this.currentUser) return;
-                    const payload = {
-                        title: this.newPostForm.title,
-                        content: this.newPostForm.content,
-                        body: this.newPostForm.body,
-                        private: this.newPostForm.private,
-                        Author_id: this.currentUser.id
-                    };
+                    const payload = { ...this.newPostForm, Author_id: this.currentUser.id };
+                    this.isLoadingCreate = true;
                     try {
                         const res = await fetch(this.apiUrl + '/post', {
                             method: 'POST',
@@ -214,30 +807,115 @@
                             body: JSON.stringify(payload)
                         });
                         if (res.ok) {
-                            alert('Пост успешно создан!');
                             this.newPostForm = { title: '', content: '', body: '', private: false };
                             this.activeTab = 'feed';
+                            this.showToast('Запись успешно опубликована!');
                             this.fetchAllPosts();
                         } else {
                             const err = await res.json();
-                            alert(JSON.stringify(err.detail));
+                            this.showToast(this.getErrorMessage(err), 'error');
                         }
-                    } catch (e) { alert('Ошибка при создании поста'); }
+                    } catch (e) { this.showToast('Ошибка сети', 'error'); }
+                    finally { this.isLoadingCreate = false; }
                 },
 
-                async deletePost(postId) {
-                    if (!confirm('Точно удалить этот пост?')) return;
+                openEditPost(post) {
+                    this.editingPost = post.id;
+                    this.editPostForm = { title: post.title, content: post.content, body: post.body, private: post.private };
+                },
+
+                async saveEditedPost() {
+                    this.isLoadingEditPost = true;
                     try {
-                        const res = await fetch(`${this.apiUrl}/post/${postId}?user_id=${this.currentUser.id}`, {
+                        const res = await fetch(`${this.apiUrl}/post/${this.editingPost}?user_id=${this.currentUser.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.editPostForm)
+                        });
+                        if (res.ok) {
+                            this.editingPost = null;
+                            this.showToast('Запись успешно обновлена!');
+                            this.fetchMyPosts();
+                            this.fetchAllPosts();
+                        } else {
+                            const err = await res.json();
+                            this.showToast(this.getErrorMessage(err), 'error');
+                        }
+                    } catch (e) { this.showToast('Ошибка сети', 'error'); }
+                    finally { this.isLoadingEditPost = false; }
+                },
+
+                confirmDeletePost(postId) {
+                    this.postToDelete = postId;
+                },
+
+                async deletePost() {
+                    if (!this.postToDelete) return;
+                    const idToDelete = this.postToDelete;
+                    this.isLoadingDeletePost = true;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/post/${idToDelete}?user_id=${this.currentUser.id}`, {
                             method: 'DELETE'
                         });
                         if (res.ok) {
-                            this.fetchMyPosts();
+                            this.showToast('Запись успешно удалена');
+                            this.postToDelete = null;
+                            this.myPosts = this.myPosts.filter(p => p.id !== idToDelete);
+                            this.allPosts = this.allPosts.filter(p => p.id !== idToDelete);
                         } else {
                             const err = await res.json();
-                            alert(err.detail || 'Ошибка удаления');
+                            this.showToast(this.getErrorMessage(err), 'error');
                         }
-                    } catch (e) { alert('Ошибка запроса'); }
+                    } catch (e) { this.showToast('Ошибка сети', 'error'); }
+                    finally { this.isLoadingDeletePost = false; }
+                },
+
+                loadProfileData() {
+                    this.updateUserForm.username = this.currentUser.username;
+                    this.updateUserForm.password = '';
+                },
+
+                async updateProfile() {
+                    this.isLoadingUpdate = true;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/author/${this.currentUser.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.updateUserForm)
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            this.currentUser.username = data.username;
+                            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+                            this.showToast('Профиль успешно обновлен!');
+                        } else {
+                            const err = await res.json();
+                            this.showToast(this.getErrorMessage(err), 'error');
+                        }
+                    } catch (e) { this.showToast('Ошибка сети', 'error'); }
+                    finally { this.isLoadingUpdate = false; }
+                },
+
+                confirmDeleteAccount() {
+                    this.showDeleteAccountModal = true;
+                },
+
+                async deleteAccount() {
+                    this.isLoadingDeleteAccount = true;
+                    try {
+                        const res = await fetch(`${this.apiUrl}/author/${this.currentUser.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (res.ok) {
+                            this.showDeleteAccountModal = false;
+                            this.logout();
+                            this.showToast('Аккаунт успешно удален');
+                        } else {
+                            const err = await res.json();
+                            this.showToast(this.getErrorMessage(err), 'error');
+                        }
+                    } catch (e) { this.showToast('Ошибка сети', 'error'); }
+                    finally { this.isLoadingDeleteAccount = false; }
                 }
             }
         }

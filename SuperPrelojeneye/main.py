@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Response
-from SuperPrelojeneye.Api.ApiPost.GetPost import main_router
+from SuperPrelojeneye.Api.ApiPost.GetPost import man_router
 import time
 from typing import Callable
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(main_router)
+app.include_router(man_router)
 
 responeurls = {}
 

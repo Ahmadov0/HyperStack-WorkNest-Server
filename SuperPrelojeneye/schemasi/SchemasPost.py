@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from SuperPrelojeneye.schemasi.SchemasUser import ResponseUser
+from typing import Optional
 
 class AddPost(BaseModel):
     title: str = Field(min_length=3, max_length=20, description="Title of the post")
@@ -19,13 +20,17 @@ class AddPost(BaseModel):
 
     Author_id: int = Field(..., description="ID of the user creating the post")
 
-class Post(AddPost):
-    id: int = Field(..., description="ID of the post")
-    author: ResponseUser = Field(..., description="Author of the post")
+class PostResponse(BaseModel):
+    id: int
+    title: str
+    content: str
+    body: str
+    private: bool
+    author: Optional[ResponseUser] = None
+    likes_count: Optional[int] = 0
+    likes_users: Optional[list[int]] = []
 
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 class UpdatePost(BaseModel):
     title: str = Field(min_length=3, max_length=20, description="Title of the post")
